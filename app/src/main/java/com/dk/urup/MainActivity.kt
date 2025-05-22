@@ -1,17 +1,16 @@
 package com.dk.urup
 
 import android.os.Bundle
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.dk.urup.databinding.ActivityMainBinding
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityMainBinding
+    private lateinit var cryptoManager: CryptoManager
+    private val encryptedDir by lazy { File(filesDir, "encrypted") }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,17 +18,43 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val navView: BottomNavigationView = binding.navView
+        // Инициализация крипто-менеджера // Исправлены опечатки
+        cryptoManager = CryptoManager(this)
 
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications
-            )
+        // Создание директории
+        if (!encryptedDir.exists()) encryptedDir.mkdirs()
+
+        setupFileList()
+
+        // Работа с FAB
+        binding.fab.setOnClickListener { // Теперь идентификатор существует
+            val originalFile = File(filesDir, "test.txt").apply {
+                writeText("Secret data")
+            }
+            val encryptedFile = File(encryptedDir, "test.enc")
+
+            val key = cryptoManager.generateKey("strong_password", "salt".toByteArray())
+            cryptoManager.encryptFile(originalFile, encryptedFile, key)
+            refreshFileList()
+        }
+    }
+
+    private fun setupFileList() {
+        binding.fileRecyclerView.layoutManager = LinearLayoutManager(this) // Исправлен ID
+        binding.fileRecyclerView.adapter = FileAdapter(
+            items = cryptoManager.getEncryptedFiles(encryptedDir),
+            onItemClick = { file ->
+                val decryptedFile = File(filesDir, "decrypted_${file.nameWithoutExtension}")
+                val key = cryptoManager.generateKey("strong_password", "salt".toByteArray())
+                cryptoManager.decryptFile(file, decryptedFile, key)
+                Toast.makeText(this, "Файл расшифрован: ${decryptedFile.path}", Toast.LENGTH_SHORT).show()
+            }
         )
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
+    }
+
+    private fun refreshFileList() {
+        (binding.fileRecyclerView.adapter as? FileAdapter)?.updateItems(
+            cryptoManager.getEncryptedFiles(encryptedDir)
+        )
     }
 }
