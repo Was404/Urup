@@ -6,4 +6,9 @@
     <string name="title_files">Файлы</string>
     <string name="title_humans">Люди</string>
     <string name="title_settings">Настройки</string>
+    <string name="select_action">Выберите действие</string>
+    <string name="decrypt">Расшифровать</string>
+    <string name="open_in_explorer">Открыть в проводнике</string>
+    <string name="file_decrypted">Файл расшифрован: %s</string>
+    <string name="no_app_found">Не найдено приложение для открытия файла</string>
 </resources>

@@ -56,6 +56,8 @@ dependencies {
     implementation ("com.google.android.material:material:1.11.0")
     implementation("org.bouncycastle:bcprov-jdk15to18:1.73") // Последняя версия
     // implementation("ru.CryptoPro.JCP:jcprov:2.0.0") // Для поддержки ГОСТ
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

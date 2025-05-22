@@ -1,41 +1,33 @@
 package com.dk.urup
 
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import androidx.security.crypto.EncryptedFile
-import androidx.security.crypto.MasterKey
-import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.*
+import java.security.SecureRandom
 import java.security.Security
 import java.security.spec.KeySpec
 import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
+import javax.crypto.CipherOutputStream
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
-import java.security.SecureRandom
-import javax.crypto.CipherOutputStream
-import javax.crypto.CipherInputStream
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 
 class CryptoManager(context: Context) {
     private val provider = BouncyCastleProvider()
-    private val algorithm = "GOST3412-2015" // Или "GOST28147" ??
-    private val transformation = "GOST3412-2015/CBC/PKCS5Padding"
+    private val algorithm = "GOST3412-2015"
+    private val transformation = "$algorithm/CBC/PKCS5Padding"
     private val keySize = 256
     private val ivSize = 16
 
     init {
         Security.removeProvider("BC")
-        Security.addProvider(BouncyCastleProvider())
-        //Security.addProvider(JCP()) // Если использовать CryptoPro, зависимость gradle обновлен
+        Security.addProvider(provider)
     }
 
     fun generateKey(password: String, salt: ByteArray): SecretKeySpec {
-        val factory = SecretKeyFactory.getInstance(
-            "PBKDF2WithHmacGOST3411", // Используйте алгоритм ГОСТ
-            Security.getProvider("BC")
-        )
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacGOST3411", provider)
         val spec: KeySpec = PBEKeySpec(
             password.toCharArray(),
             salt,
@@ -51,14 +43,19 @@ class CryptoManager(context: Context) {
             SecureRandom().nextBytes(this)
         }
 
-        val cipher = Cipher.getInstance("$algorithm/CBC/PKCS7Padding", provider)
+        val cipher = Cipher.getInstance(transformation, provider)
         cipher.init(Cipher.ENCRYPT_MODE, key, IvParameterSpec(iv))
 
         FileInputStream(inputFile).use { input ->
             FileOutputStream(outputFile).use { output ->
                 output.write(iv)
-                val cos = CipherOutputStream(output, cipher)
-                cos.use { it.write(input.readBytes()) }
+                val buffer = ByteArray(4096)
+                var bytesRead: Int
+                CipherOutputStream(output, cipher).use { cos ->
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        cos.write(buffer, 0, bytesRead)
+                    }
+                }
             }
         }
     }
@@ -68,19 +65,24 @@ class CryptoManager(context: Context) {
             val iv = ByteArray(ivSize)
             input.read(iv)
 
-            val cipher = Cipher.getInstance("$algorithm/CBC/PKCS7Padding", provider)
+            val cipher = Cipher.getInstance(transformation, provider)
             cipher.init(Cipher.DECRYPT_MODE, key, IvParameterSpec(iv))
 
-            val cis = CipherInputStream(input, cipher)
-            FileOutputStream(outputFile).use { output ->
-                cis.copyTo(output)
+            val buffer = ByteArray(4096)
+            var bytesRead: Int
+            CipherInputStream(input, cipher).use { cis ->
+                FileOutputStream(outputFile).use { output ->
+                    while (cis.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                    }
+                }
             }
         }
     }
 
     fun getEncryptedFiles(directory: File): List<File> {
         return directory.listFiles { file ->
-            file.extension == "enc"
+            file.extension.equals("enc", ignoreCase = true)
         }?.toList() ?: emptyList()
     }
 }
