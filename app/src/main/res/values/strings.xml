@@ -11,4 +11,6 @@
     <string name="open_in_explorer">Открыть в проводнике</string>
     <string name="file_decrypted">Файл расшифрован: %s</string>
     <string name="no_app_found">Не найдено приложение для открытия файла</string>
+
+    <string name="default_web_client_id">ваш_client_id</string>
 </resources>
