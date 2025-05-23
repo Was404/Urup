@@ -6,6 +6,7 @@
     <string name="title_files">Файлы</string>
     <string name="title_humans">Люди</string>
     <string name="title_settings">Настройки</string>
+<<<<<<< HEAD
     <string name="select_action">Выберите действие</string>
     <string name="decrypt">Расшифровать</string>
     <string name="open_in_explorer">Открыть в проводнике</string>
@@ -13,4 +14,6 @@
     <string name="no_app_found">Не найдено приложение для открытия файла</string>
 
     <string name="default_web_client_id">ваш_client_id</string>
+=======
+>>>>>>> fcaa738 (Revert "fixed ANR +-")
 </resources>
