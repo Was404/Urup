@@ -22,11 +22,14 @@ import java.io.InputStream
 import java.io.OutputStream
 import android.content.ActivityNotFoundException
 import kotlinx.coroutines.cancel
+import android.os.Environment
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var cryptoManager: CryptoManager
-    private val encryptedDir by lazy { File(filesDir, "encrypted") }
+    val externalPublicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+    val encryptedDir = File(externalPublicDir, "EncryptedFiles")
+
     private val requestCodePickFile = 101
     private val scope = CoroutineScope(Dispatchers.Main + Job())
 
