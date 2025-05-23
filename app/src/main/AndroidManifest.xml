@@ -49,6 +49,9 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+        <activity android:name=".AuthActivity"
+            android:exported="true"
+            android:label="Авторизация" />
 
     </application>
 

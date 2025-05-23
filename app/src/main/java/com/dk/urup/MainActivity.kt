@@ -22,16 +22,29 @@ import java.io.InputStream
 import java.io.OutputStream
 import android.content.ActivityNotFoundException
 import kotlinx.coroutines.cancel
+import android.os.Environment
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var cryptoManager: CryptoManager
-    private val encryptedDir by lazy { File(filesDir, "encrypted") }
+    val externalPublicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+    val encryptedDir = File(externalPublicDir, "EncryptedFiles")
+
     private val requestCodePickFile = 101
     private val scope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Проверка входа пользователя перед остальным кодом:
+        val prefs = getSharedPreferences("auth", MODE_PRIVATE)
+        val isLoggedIn = prefs.getBoolean("isLoggedIn", false)
+        if (!isLoggedIn) {
+            // Пользователь не вошёл — запускаем AuthActivity и завершаем MainActivity:
+            startActivity(Intent(this, AuthActivity::class.java))
+            finish()
+            return // чтобы не выполнять остальной код в onCreate.
+        }
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -118,7 +131,8 @@ class MainActivity : AppCompatActivity() {
     private fun decryptAndOpenFile(encryptedFile: File) {
         scope.launch {
             withContext(Dispatchers.IO) {
-                val decryptedFile = File(filesDir, "decrypted_${encryptedFile.nameWithoutExtension}")
+                val decryptedFile =
+                    File(filesDir, "decrypted_${encryptedFile.nameWithoutExtension}")
                 val key = cryptoManager.generateKey("password", "salt".toByteArray())
                 cryptoManager.decryptFile(encryptedFile, decryptedFile, key)
 
@@ -135,7 +149,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openInFileManager(file: File) {
-        val uri = FileProvider.getUriForFile( // Исправлено на FileProvider
+        val uri = FileProvider.getUriForFile(
             this,
             "${applicationContext.packageName}.fileprovider",
             file
@@ -148,7 +162,7 @@ class MainActivity : AppCompatActivity() {
 
         try {
             startActivity(intent)
-        } catch (_: ActivityNotFoundException) { // Исправлен параметр
+        } catch (_: ActivityNotFoundException) {
             Toast.makeText(this, R.string.no_app_found, Toast.LENGTH_SHORT).show()
         }
     }
